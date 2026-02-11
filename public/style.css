@@ -59,6 +59,73 @@ body {
   margin-bottom: 28px;
 }
 
+.hero-photos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hero-photo-card {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid var(--border-light);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.hero-photo-card:hover {
+  transform: scale(1.04);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 16px var(--pink-glow);
+}
+
+.hero-photo-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-photo-card span {
+  display: block;
+  text-align: center;
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+}
+
+.hero-photo-big {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 3px solid var(--pink);
+  box-shadow: 0 0 40px var(--pink-glow), 0 12px 40px rgba(0, 0, 0, 0.5);
+  margin-bottom: 28px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero-photo-big img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.hero-photo-big span {
+  display: block;
+  text-align: center;
+  padding: 12px 10px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--pink);
+  background: var(--card-bg);
+}
+
 .hero h1 {
   font-size: 36px;
   font-weight: 800;
@@ -354,20 +421,6 @@ main {
   letter-spacing: 2.5px;
   color: var(--text-secondary);
   background: var(--card-bg);
-}
-
-.img-marquee-card-big {
-  width: 300px;
-}
-
-.img-marquee-card-big img {
-  height: 220px;
-}
-
-.img-marquee-card-big span {
-  font-size: 13px;
-  padding: 14px 10px;
-  letter-spacing: 2px;
 }
 
 @keyframes img-marquee-scroll {
@@ -876,6 +929,19 @@ main {
 
   .hero-avatar {
     width: 220px;
+  }
+
+  .hero-photos {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .hero-photo-card img {
+    height: 130px;
+  }
+
+  .hero-photo-big img {
+    height: 220px;
   }
 
   .hero-text {
