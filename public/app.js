@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadItems();
 
   // If URL is /admin and not logged in, show login modal
-  if (window.location.pathname === '/admin' && !isAdmin) {
+  if (window.location.pathname.startsWith('/admin') && !isAdmin) {
     openLoginModal();
   }
 });
@@ -43,22 +43,27 @@ async function handleLogin(e) {
   const password = document.getElementById('login-password').value;
   const errorEl = document.getElementById('login-error');
 
-  const res = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
 
-  if (!res.ok) {
-    errorEl.textContent = 'Wrong username or password';
+    if (!res.ok) {
+      errorEl.textContent = 'Wrong username or password';
+      errorEl.classList.remove('hidden');
+      return;
+    }
+
+    isAdmin = true;
+    updateUI();
+    closeModal('login-modal');
+    renderItems();
+  } catch (err) {
+    errorEl.textContent = 'Connection error';
     errorEl.classList.remove('hidden');
-    return;
   }
-
-  isAdmin = true;
-  updateUI();
-  closeModal('login-modal');
-  renderItems();
 }
 
 async function logout() {
