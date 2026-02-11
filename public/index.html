@@ -9,21 +9,31 @@
 <body>
   <header>
     <div class="header-inner">
-      <h1>Wishlist</h1>
+      <div class="header-logo">Sasha's Wishlist</div>
       <div class="header-actions">
-        <button id="btn-login" class="btn btn-outline" onclick="openLoginModal()">Login</button>
-        <button id="btn-logout" class="btn btn-outline hidden" onclick="logout()">Logout</button>
+        <button id="btn-login" class="btn btn-ghost" onclick="openLoginModal()">Login</button>
+        <button id="btn-logout" class="btn btn-ghost hidden" onclick="logout()">Logout</button>
         <button id="btn-add" class="btn btn-primary hidden" onclick="openAddModal()">+ Add Gift</button>
       </div>
     </div>
   </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-emoji">&#127873;</div>
+      <h1>Hey! Here's what I'd love to get</h1>
+      <p class="hero-sub">Pick something, hit reserve — and it's a surprise for me!</p>
+    </div>
+  </section>
 
   <main>
     <div id="items-grid" class="items-grid">
       <!-- Cards rendered by JS -->
     </div>
     <div id="empty-state" class="empty-state hidden">
-      <p>No gifts yet</p>
+      <div class="empty-icon">&#127880;</div>
+      <p class="empty-title">Nothing here yet</p>
+      <p class="empty-sub">Gifts will appear here soon — stay tuned!</p>
     </div>
   </main>
 

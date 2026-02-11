@@ -95,7 +95,7 @@ function renderItems() {
       : '';
 
     const reservedBadge = item.reserved
-      ? `<span class="badge-reserved">Reserved</span>`
+      ? `<span class="badge-reserved">&#10003; Reserved</span>`
       : '';
 
     let reserveBtn = '';
