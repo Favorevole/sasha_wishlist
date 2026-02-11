@@ -105,6 +105,10 @@ function renderItems() {
       ? `<span class="card-type">${escapeHtml(item.type)}</span>`
       : '';
 
+    const descHTML = item.description
+      ? `<div class="card-description">${escapeHtml(item.description)}</div>`
+      : '';
+
     const priceHTML = item.price !== null && item.price !== undefined
       ? `<div class="card-price">${formatPrice(item.price)}</div>`
       : '';
@@ -138,6 +142,7 @@ function renderItems() {
           ${reservedBadge}
           <div class="card-name">${escapeHtml(item.name)}</div>
           ${typeHTML}
+          ${descHTML}
           ${priceHTML}
           ${linkHTML}
           <div class="card-footer">
@@ -168,6 +173,7 @@ function openEditModal(id) {
   document.getElementById('item-link').value = item.link || '';
   document.getElementById('item-price').value = item.price ?? '';
   document.getElementById('item-type').value = item.type || '';
+  document.getElementById('item-description').value = item.description || '';
   document.getElementById('item-photo').value = '';
 
   const currentPhoto = document.getElementById('current-photo');
@@ -190,6 +196,7 @@ async function handleItemSubmit(e) {
   formData.append('link', document.getElementById('item-link').value);
   formData.append('price', document.getElementById('item-price').value);
   formData.append('type', document.getElementById('item-type').value);
+  formData.append('description', document.getElementById('item-description').value);
 
   const photoFile = document.getElementById('item-photo').files[0];
   if (photoFile) {

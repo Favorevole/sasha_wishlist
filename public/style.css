@@ -189,6 +189,13 @@ main {
   width: fit-content;
 }
 
+.card-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
 .card-price {
   font-size: 24px;
   font-weight: 800;
@@ -545,7 +552,8 @@ main {
   letter-spacing: 0.5px;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea {
   width: 100%;
   padding: 11px 14px;
   border: 1.5px solid var(--border-light);
@@ -556,13 +564,20 @@ main {
   color: var(--text);
 }
 
-.form-group input:focus {
+.form-group textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: var(--pink);
   box-shadow: 0 0 0 3px var(--pink-glow);
 }
 
-.form-group input::placeholder {
+.form-group input::placeholder,
+.form-group textarea::placeholder {
   color: var(--text-secondary);
 }
 

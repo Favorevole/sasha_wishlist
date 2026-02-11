@@ -26,9 +26,14 @@ async function initDB() {
       price INTEGER,
       type TEXT DEFAULT '',
       photo TEXT DEFAULT '',
+      description TEXT DEFAULT '',
       reserved BOOLEAN DEFAULT false,
       created_at TIMESTAMPTZ DEFAULT NOW()
     )
+  `);
+  // Migrate: add description column if missing
+  await pool.query(`
+    ALTER TABLE items ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''
   `);
 }
 
@@ -117,7 +122,7 @@ app.get('/api/auth/check', (req, res) => {
 
 app.get('/api/items', async (req, res) => {
   const result = await pool.query(
-    'SELECT id, name, link, price, type, photo, reserved, created_at AS "createdAt" FROM items ORDER BY created_at ASC'
+    'SELECT id, name, link, price, type, photo, description, reserved, created_at AS "createdAt" FROM items ORDER BY created_at ASC'
   );
   res.json(result.rows);
 });
@@ -129,12 +134,13 @@ app.post('/api/items', requireAdmin, upload.single('photo'), async (req, res) =>
   const price = req.body.price ? Number(req.body.price) : null;
   const type = req.body.type || '';
   const photo = fileToBase64(req.file);
+  const description = req.body.description || '';
 
   const result = await pool.query(
-    `INSERT INTO items (id, name, link, price, type, photo, reserved)
-     VALUES ($1, $2, $3, $4, $5, $6, false)
-     RETURNING id, name, link, price, type, photo, reserved, created_at AS "createdAt"`,
-    [id, name, link, price, type, photo]
+    `INSERT INTO items (id, name, link, price, type, photo, description, reserved)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, false)
+     RETURNING id, name, link, price, type, photo, description, reserved, created_at AS "createdAt"`,
+    [id, name, link, price, type, photo, description]
   );
   res.status(201).json(result.rows[0]);
 });
@@ -153,10 +159,11 @@ app.put('/api/items/:id', requireAdmin, upload.single('photo'), async (req, res)
   if (req.body.price !== undefined) { fields.push(`price = $${idx++}`); values.push(req.body.price ? Number(req.body.price) : null); }
   if (req.body.type !== undefined) { fields.push(`type = $${idx++}`); values.push(req.body.type); }
   if (req.file) { fields.push(`photo = $${idx++}`); values.push(fileToBase64(req.file)); }
+  if (req.body.description !== undefined) { fields.push(`description = $${idx++}`); values.push(req.body.description); }
 
   if (fields.length === 0) {
     const current = await pool.query(
-      'SELECT id, name, link, price, type, photo, reserved, created_at AS "createdAt" FROM items WHERE id = $1',
+      'SELECT id, name, link, price, type, photo, description, reserved, created_at AS "createdAt" FROM items WHERE id = $1',
       [req.params.id]
     );
     return res.json(current.rows[0]);
@@ -165,7 +172,7 @@ app.put('/api/items/:id', requireAdmin, upload.single('photo'), async (req, res)
   values.push(req.params.id);
   const result = await pool.query(
     `UPDATE items SET ${fields.join(', ')} WHERE id = $${idx}
-     RETURNING id, name, link, price, type, photo, reserved, created_at AS "createdAt"`,
+     RETURNING id, name, link, price, type, photo, description, reserved, created_at AS "createdAt"`,
     values
   );
   res.json(result.rows[0]);
