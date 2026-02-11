@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wishlist</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Wishlist</h1>
+      <div class="header-actions">
+        <button id="btn-login" class="btn btn-outline" onclick="openLoginModal()">Login</button>
+        <button id="btn-logout" class="btn btn-outline hidden" onclick="logout()">Logout</button>
+        <button id="btn-add" class="btn btn-primary hidden" onclick="openAddModal()">+ Add Gift</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="items-grid" class="items-grid">
+      <!-- Cards rendered by JS -->
+    </div>
+    <div id="empty-state" class="empty-state hidden">
+      <p>No gifts yet</p>
+    </div>
+  </main>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Login</h2>
+        <button class="modal-close" onclick="closeModal('login-modal')">&times;</button>
+      </div>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required autocomplete="current-password">
+        </div>
+        <div id="login-error" class="form-error hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full">Log in</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add/Edit Item Modal -->
+  <div id="item-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="item-modal-title">Add Gift</h2>
+        <button class="modal-close" onclick="closeModal('item-modal')">&times;</button>
+      </div>
+      <form id="item-form" onsubmit="handleItemSubmit(event)">
+        <input type="hidden" id="item-id">
+        <div class="form-group">
+          <label for="item-name">Name *</label>
+          <input type="text" id="item-name" required>
+        </div>
+        <div class="form-group">
+          <label for="item-link">Link</label>
+          <input type="url" id="item-link" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label for="item-price">Price</label>
+          <input type="number" id="item-price" min="0" step="1">
+        </div>
+        <div class="form-group">
+          <label for="item-type">Type</label>
+          <input type="text" id="item-type" placeholder="e.g. Electronics, Books...">
+        </div>
+        <div class="form-group">
+          <label for="item-photo">Photo</label>
+          <input type="file" id="item-photo" accept="image/*">
+          <div id="current-photo" class="current-photo hidden">
+            <img id="current-photo-img" src="" alt="Current photo">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <h2 id="confirm-title">Confirm</h2>
+        <button class="modal-close" onclick="closeModal('confirm-modal')">&times;</button>
+      </div>
+      <p id="confirm-text"></p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal('confirm-modal')">Cancel</button>
+        <button id="confirm-ok" class="btn btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
