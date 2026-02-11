@@ -356,6 +356,20 @@ main {
   background: var(--card-bg);
 }
 
+.img-marquee-card-big {
+  width: 300px;
+}
+
+.img-marquee-card-big img {
+  height: 220px;
+}
+
+.img-marquee-card-big span {
+  font-size: 13px;
+  padding: 14px 10px;
+  letter-spacing: 2px;
+}
+
 @keyframes img-marquee-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
@@ -692,6 +706,133 @@ main {
 
 .phone-form .form-group {
   margin-bottom: 12px;
+}
+
+/* ===== PROGRESS BAR (Card) ===== */
+.card-progress {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.card-progress-bar {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--pink), var(--pink-hover));
+  transition: width 0.4s ease;
+}
+
+.card-progress-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+/* ===== PROGRESS BAR (Detail Modal) ===== */
+.detail-progress {
+  height: 10px;
+  background: var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.detail-progress-bar {
+  height: 100%;
+  border-radius: 5px;
+  background: linear-gradient(90deg, var(--pink), var(--pink-hover));
+  transition: width 0.4s ease;
+}
+
+.detail-progress-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ===== BADGE FUNDED ===== */
+.badge-funded {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--success);
+  color: #121218;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  width: fit-content;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== DONATE FORM ===== */
+.donate-form {
+  margin-top: 14px;
+}
+
+.donate-form .form-group {
+  margin-bottom: 12px;
+}
+
+/* ===== DONOR LIST ===== */
+.detail-donors {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.detail-donors-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.donor-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.donor-item:last-child {
+  border-bottom: none;
+}
+
+.donor-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.donor-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.donor-phone {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.donor-amount {
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.donor-item .btn-sm {
+  margin-left: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
 }
 
 /* ===== EMPTY STATE ===== */

@@ -113,6 +113,18 @@ function renderItems() {
       ? `<div class="card-price">${formatPrice(item.price)}</div>`
       : '';
 
+    let progressHTML = '';
+    if (item.price && item.funded > 0) {
+      const pct = Math.min(item.funded / item.price * 100, 100);
+      if (item.funded >= item.price) {
+        progressHTML = `<span class="badge-funded">&#10003; Fully funded</span>`;
+      } else {
+        progressHTML = `
+          <div class="card-progress"><div class="card-progress-bar" style="width:${pct}%"></div></div>
+          <div class="card-progress-text">${formatPrice(item.funded)} / ${formatPrice(item.price)}</div>`;
+      }
+    }
+
     const linkHTML = item.link
       ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Where to buy &rarr;</a>`
       : '';
@@ -137,6 +149,7 @@ function renderItems() {
           ${typeHTML}
           ${descHTML}
           ${priceHTML}
+          ${progressHTML}
           ${linkHTML}
           ${adminBtns}
         </div>
@@ -269,10 +282,60 @@ function openDetailModal(id) {
     linkEl.classList.add('hidden');
   }
 
-  // Reserve section
+  // Reserve & donate section
   const section = document.getElementById('detail-reserve-section');
+  const hasPrice = item.price !== null && item.price !== undefined && item.price > 0;
+
+  let detailProgressHTML = '';
+  if (hasPrice && item.funded > 0) {
+    const pct = Math.min(item.funded / item.price * 100, 100);
+    if (item.funded >= item.price) {
+      detailProgressHTML = `<span class="badge-funded">&#10003; Fully funded</span>`;
+    } else {
+      detailProgressHTML = `
+        <div class="detail-progress"><div class="detail-progress-bar" style="width:${pct}%"></div></div>
+        <div class="detail-progress-text">${formatPrice(item.funded)} / ${formatPrice(item.price)}</div>`;
+    }
+  }
+
   if (!item.reserved) {
+    const donateBtn = hasPrice
+      ? `<button class="btn btn-outline btn-full" onclick="showDonateForm('${item.id}')" style="margin-top:8px">Contribute</button>`
+      : '';
+
+    const donateForm = hasPrice
+      ? `<div id="donate-form" class="donate-form hidden">
+          <div class="form-group">
+            <label for="donate-phone">Your phone number</label>
+            <input type="tel" id="donate-phone" placeholder="+7 (999) 123-45-67" required>
+          </div>
+          <div class="form-group">
+            <label for="donate-name">Your name (optional)</label>
+            <input type="text" id="donate-name" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label for="donate-amount">Amount (&#8381;)</label>
+            <input type="number" id="donate-amount" min="1" step="1" required>
+          </div>
+          <div id="donate-error" class="form-error hidden"></div>
+          <button class="btn btn-primary btn-full" onclick="handleDonate('${item.id}')">Confirm contribution</button>
+        </div>`
+      : '';
+
+    const cancelDonateBtn = hasPrice && item.funded > 0
+      ? `<button class="btn btn-outline btn-full" onclick="showUndonateForm('${item.id}')" style="margin-top:8px">Cancel my contribution</button>
+         <div id="undonate-form" class="phone-form hidden">
+           <div class="form-group">
+             <label for="undonate-phone">Your phone number</label>
+             <input type="tel" id="undonate-phone" placeholder="+7 (999) 123-45-67" required>
+           </div>
+           <div id="undonate-error" class="form-error hidden"></div>
+           <button class="btn btn-outline btn-full" onclick="handleUndonate('${item.id}')">Confirm cancellation</button>
+         </div>`
+      : '';
+
     section.innerHTML = `
+      ${detailProgressHTML}
       <button class="btn btn-primary btn-full" onclick="showReservePhone('${item.id}')">Reserve this gift</button>
       <div id="reserve-phone-form" class="phone-form hidden">
         <div class="form-group">
@@ -280,12 +343,19 @@ function openDetailModal(id) {
           <input type="tel" id="reserve-phone" placeholder="+7 (999) 123-45-67" required>
         </div>
         <button class="btn btn-primary btn-full" onclick="handleReserve('${item.id}')">Confirm reservation</button>
-      </div>`;
+      </div>
+      ${donateBtn}
+      ${donateForm}
+      ${cancelDonateBtn}
+      <div id="detail-donors-container"></div>`;
   } else if (isAdmin) {
     section.innerHTML = `
-      <button class="btn btn-outline btn-full" onclick="handleAdminUnreserve('${item.id}')">Unreserve</button>`;
+      ${detailProgressHTML}
+      <button class="btn btn-outline btn-full" onclick="handleAdminUnreserve('${item.id}')">Unreserve</button>
+      <div id="detail-donors-container"></div>`;
   } else {
     section.innerHTML = `
+      ${detailProgressHTML}
       <button class="btn btn-outline btn-full" onclick="showUnreservePhone('${item.id}')">Cancel reservation</button>
       <div id="unreserve-phone-form" class="phone-form hidden">
         <div class="form-group">
@@ -294,7 +364,13 @@ function openDetailModal(id) {
         </div>
         <div id="unreserve-error" class="form-error hidden"></div>
         <button class="btn btn-outline btn-full" onclick="handleUnreserve('${item.id}')">Confirm cancellation</button>
-      </div>`;
+      </div>
+      <div id="detail-donors-container"></div>`;
+  }
+
+  // Load donor list if item has a price
+  if (hasPrice) {
+    loadDonors(item.id);
   }
 
   openModal('detail-modal');
@@ -361,6 +437,119 @@ async function handleAdminUnreserve(id) {
     closeModal('detail-modal');
     await loadItems();
   }
+}
+
+// --- Donations ---
+function showDonateForm() {
+  const form = document.getElementById('donate-form');
+  form.classList.remove('hidden');
+  document.getElementById('donate-phone').focus();
+}
+
+function showUndonateForm() {
+  const form = document.getElementById('undonate-form');
+  form.classList.remove('hidden');
+  document.getElementById('undonate-phone').focus();
+}
+
+async function handleDonate(id) {
+  const phone = document.getElementById('donate-phone').value.trim();
+  const name = document.getElementById('donate-name').value.trim();
+  const amount = parseInt(document.getElementById('donate-amount').value, 10);
+  const errorEl = document.getElementById('donate-error');
+
+  if (!phone) { errorEl.textContent = 'Phone number is required'; errorEl.classList.remove('hidden'); return; }
+  if (!amount || amount <= 0) { errorEl.textContent = 'Amount must be greater than 0'; errorEl.classList.remove('hidden'); return; }
+
+  const res = await fetch(`/api/items/${id}/donate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, name, amount })
+  });
+
+  if (res.ok) {
+    closeModal('detail-modal');
+    await loadItems();
+  } else {
+    const data = await res.json();
+    errorEl.textContent = data.error || 'Failed to contribute';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+async function handleUndonate(id) {
+  const phone = document.getElementById('undonate-phone').value.trim();
+  if (!phone) return;
+
+  const errorEl = document.getElementById('undonate-error');
+  const res = await fetch(`/api/items/${id}/undonate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
+  if (res.ok) {
+    closeModal('detail-modal');
+    await loadItems();
+  } else {
+    const data = await res.json();
+    errorEl.textContent = data.error || 'No donations found for this phone';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+async function handleAdminRemoveDonation(itemId, donationId) {
+  const res = await fetch(`/api/items/${itemId}/undonate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ donationId })
+  });
+  if (res.ok) {
+    await loadItems();
+    // Refresh donor list in modal
+    loadDonors(itemId);
+    // Update progress bar in modal
+    const item = items.find(i => i.id === itemId);
+    if (item) openDetailModal(itemId);
+  }
+}
+
+async function loadDonors(itemId) {
+  const container = document.getElementById('detail-donors-container');
+  if (!container) return;
+
+  const res = await fetch(`/api/items/${itemId}/donations`);
+  const donors = await res.json();
+
+  if (donors.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const donorRows = donors.map(d => {
+    const nameDisplay = d.name || 'Anonymous';
+    const phoneDisplay = isAdmin && d.phone ? `<span class="donor-phone">${escapeHtml(d.phone)}</span>` : '';
+    const removeBtn = isAdmin && d.id
+      ? `<button class="btn btn-danger btn-sm" onclick="handleAdminRemoveDonation('${itemId}', '${d.id}')">Remove</button>`
+      : '';
+    return `
+      <div class="donor-item">
+        <div class="donor-info">
+          <span class="donor-name">${escapeHtml(nameDisplay)}</span>
+          ${phoneDisplay}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="donor-amount">${formatPrice(d.amount)}</span>
+          ${removeBtn}
+        </div>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="detail-donors">
+      <div class="detail-donors-title">Contributors</div>
+      ${donorRows}
+    </div>`;
 }
 
 // --- Delete ---

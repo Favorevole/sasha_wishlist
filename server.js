@@ -39,6 +39,17 @@ async function initDB() {
   await pool.query(`
     ALTER TABLE items ADD COLUMN IF NOT EXISTS reserved_by TEXT DEFAULT ''
   `);
+  // Donations table for crowdfunding
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS donations (
+      id UUID PRIMARY KEY,
+      item_id UUID NOT NULL REFERENCES items(id) ON DELETE CASCADE,
+      phone TEXT NOT NULL,
+      name TEXT DEFAULT '',
+      amount INTEGER NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
 }
 
 // Multer config — memory storage, convert to base64
@@ -127,9 +138,18 @@ app.get('/api/auth/check', (req, res) => {
 app.get('/api/items', async (req, res) => {
   const isAdminReq = req.session && req.session.isAdmin;
   const cols = isAdminReq
-    ? 'id, name, link, price, type, photo, description, reserved, reserved_by AS "reservedBy", created_at AS "createdAt"'
-    : 'id, name, link, price, type, photo, description, reserved, created_at AS "createdAt"';
-  const result = await pool.query(`SELECT ${cols} FROM items ORDER BY created_at ASC`);
+    ? 'i.id, i.name, i.link, i.price, i.type, i.photo, i.description, i.reserved, i.reserved_by AS "reservedBy", i.created_at AS "createdAt"'
+    : 'i.id, i.name, i.link, i.price, i.type, i.photo, i.description, i.reserved, i.created_at AS "createdAt"';
+  const donorAgg = isAdminReq
+    ? ', COALESCE(SUM(d.amount), 0)::int AS funded, COUNT(d.id)::int AS "donorCount"'
+    : ', COALESCE(SUM(d.amount), 0)::int AS funded';
+  const result = await pool.query(
+    `SELECT ${cols}${donorAgg}
+     FROM items i
+     LEFT JOIN donations d ON d.item_id = i.id
+     GROUP BY i.id
+     ORDER BY i.created_at ASC`
+  );
   res.json(result.rows);
 });
 
@@ -219,6 +239,54 @@ app.post('/api/items/:id/unreserve', async (req, res) => {
 
   await pool.query('UPDATE items SET reserved = false, reserved_by = $2 WHERE id = $1', [req.params.id, '']);
   res.json({ ok: true });
+});
+
+// --- DONATION ROUTES ---
+
+app.post('/api/items/:id/donate', async (req, res) => {
+  const { phone, name, amount } = req.body;
+  if (!phone || !phone.trim()) return res.status(400).json({ error: 'Phone number is required' });
+  if (!amount || amount <= 0) return res.status(400).json({ error: 'Amount must be greater than 0' });
+
+  const check = await pool.query('SELECT id FROM items WHERE id = $1', [req.params.id]);
+  if (check.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+
+  const id = uuidv4();
+  const normalized = phone.trim().replace(/[\s\-\(\)]/g, '');
+  await pool.query(
+    'INSERT INTO donations (id, item_id, phone, name, amount) VALUES ($1, $2, $3, $4, $5)',
+    [id, req.params.id, normalized, name || '', Number(amount)]
+  );
+  res.json({ ok: true });
+});
+
+app.post('/api/items/:id/undonate', async (req, res) => {
+  const isAdminReq = req.session && req.session.isAdmin;
+  const { phone, donationId } = req.body;
+
+  if (isAdminReq && donationId) {
+    const result = await pool.query('DELETE FROM donations WHERE id = $1 AND item_id = $2 RETURNING id', [donationId, req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Donation not found' });
+    return res.json({ ok: true });
+  }
+
+  if (!phone || !phone.trim()) return res.status(400).json({ error: 'Phone number is required' });
+  const normalized = phone.trim().replace(/[\s\-\(\)]/g, '');
+  const result = await pool.query('DELETE FROM donations WHERE item_id = $1 AND phone = $2 RETURNING id', [req.params.id, normalized]);
+  if (result.rows.length === 0) return res.status(404).json({ error: 'No donations found for this phone number' });
+  res.json({ ok: true });
+});
+
+app.get('/api/items/:id/donations', async (req, res) => {
+  const isAdminReq = req.session && req.session.isAdmin;
+  const cols = isAdminReq
+    ? 'id, name, phone, amount, created_at AS "createdAt"'
+    : 'name, amount';
+  const result = await pool.query(
+    `SELECT ${cols} FROM donations WHERE item_id = $1 ORDER BY created_at ASC`,
+    [req.params.id]
+  );
+  res.json(result.rows);
 });
 
 // Start
