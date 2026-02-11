@@ -35,6 +35,10 @@ async function initDB() {
   await pool.query(`
     ALTER TABLE items ADD COLUMN IF NOT EXISTS description TEXT DEFAULT ''
   `);
+  // Migrate: add reserved_by column if missing
+  await pool.query(`
+    ALTER TABLE items ADD COLUMN IF NOT EXISTS reserved_by TEXT DEFAULT ''
+  `);
 }
 
 // Multer config — memory storage, convert to base64
@@ -121,9 +125,11 @@ app.get('/api/auth/check', (req, res) => {
 // --- ITEM ROUTES ---
 
 app.get('/api/items', async (req, res) => {
-  const result = await pool.query(
-    'SELECT id, name, link, price, type, photo, description, reserved, created_at AS "createdAt" FROM items ORDER BY created_at ASC'
-  );
+  const isAdminReq = req.session && req.session.isAdmin;
+  const cols = isAdminReq
+    ? 'id, name, link, price, type, photo, description, reserved, reserved_by AS "reservedBy", created_at AS "createdAt"'
+    : 'id, name, link, price, type, photo, description, reserved, created_at AS "createdAt"';
+  const result = await pool.query(`SELECT ${cols} FROM items ORDER BY created_at ASC`);
   res.json(result.rows);
 });
 
@@ -185,19 +191,33 @@ app.delete('/api/items/:id', requireAdmin, async (req, res) => {
 });
 
 app.post('/api/items/:id/reserve', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone || !phone.trim()) return res.status(400).json({ error: 'Phone number is required' });
+
+  const normalized = phone.replace(/[\s\-\(\)]/g, '');
   const check = await pool.query('SELECT reserved FROM items WHERE id = $1', [req.params.id]);
   if (check.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   if (check.rows[0].reserved) return res.status(400).json({ error: 'Already reserved' });
 
-  await pool.query('UPDATE items SET reserved = true WHERE id = $1', [req.params.id]);
+  await pool.query('UPDATE items SET reserved = true, reserved_by = $2 WHERE id = $1', [req.params.id, normalized]);
   res.json({ ok: true });
 });
 
-app.post('/api/items/:id/unreserve', requireAdmin, async (req, res) => {
-  const check = await pool.query('SELECT id FROM items WHERE id = $1', [req.params.id]);
+app.post('/api/items/:id/unreserve', async (req, res) => {
+  const check = await pool.query('SELECT id, reserved_by FROM items WHERE id = $1', [req.params.id]);
   if (check.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-  await pool.query('UPDATE items SET reserved = false WHERE id = $1', [req.params.id]);
+  const isAdminReq = req.session && req.session.isAdmin;
+  if (!isAdminReq) {
+    const { phone } = req.body;
+    if (!phone || !phone.trim()) return res.status(400).json({ error: 'Phone number is required' });
+    const normalized = phone.replace(/[\s\-\(\)]/g, '');
+    if (normalized !== check.rows[0].reserved_by) {
+      return res.status(403).json({ error: 'Phone number does not match' });
+    }
+  }
+
+  await pool.query('UPDATE items SET reserved = false, reserved_by = $2 WHERE id = $1', [req.params.id, '']);
   res.json({ ok: true });
 });
 

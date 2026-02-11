@@ -114,29 +114,22 @@ function renderItems() {
       : '';
 
     const linkHTML = item.link
-      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener">Where to buy &rarr;</a>`
+      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Where to buy &rarr;</a>`
       : '';
 
     const reservedBadge = item.reserved
       ? `<span class="badge-reserved">&#10003; Reserved</span>`
       : '';
 
-    let footerBtn = '';
-    if (!item.reserved) {
-      footerBtn = `<button class="btn btn-primary btn-sm" onclick="reserveItem('${item.id}')">Reserve this gift</button>`;
-    } else if (isAdmin) {
-      footerBtn = `<button class="btn btn-outline btn-sm" onclick="unreserveItem('${item.id}')">Unreserve</button>`;
-    }
-
     const adminBtns = isAdmin
       ? `<div class="card-admin-actions">
-           <button class="btn btn-outline btn-sm" onclick="openEditModal('${item.id}')">Edit</button>
-           <button class="btn btn-danger btn-sm" onclick="confirmDelete('${item.id}')">Delete</button>
+           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openEditModal('${item.id}')">Edit</button>
+           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDelete('${item.id}')">Delete</button>
          </div>`
       : '';
 
     return `
-      <div class="card ${item.reserved ? 'reserved' : ''}">
+      <div class="card ${item.reserved ? 'reserved' : ''}" onclick="openDetailModal('${item.id}')">
         ${photoHTML}
         <div class="card-body">
           ${reservedBadge}
@@ -145,9 +138,6 @@ function renderItems() {
           ${descHTML}
           ${priceHTML}
           ${linkHTML}
-          <div class="card-footer">
-            ${footerBtn}
-          </div>
           ${adminBtns}
         </div>
       </div>`;
@@ -216,10 +206,124 @@ async function handleItemSubmit(e) {
   }
 }
 
-// --- Reserve ---
-async function reserveItem(id) {
-  const res = await fetch(`/api/items/${id}/reserve`, { method: 'POST' });
+// --- Detail Modal ---
+function openDetailModal(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+
+  // Photo
+  const photoEl = document.getElementById('detail-photo');
+  if (item.photo) {
+    photoEl.src = item.photo;
+    photoEl.classList.remove('hidden');
+  } else {
+    photoEl.classList.add('hidden');
+  }
+
+  // Badge
+  const badgeEl = document.getElementById('detail-badge');
+  badgeEl.classList.toggle('hidden', !item.reserved);
+
+  // Admin: show who reserved
+  const reservedByEl = document.getElementById('detail-admin-reserved-by');
+  if (isAdmin && item.reserved && item.reservedBy) {
+    reservedByEl.textContent = `Reserved by: ${item.reservedBy}`;
+    reservedByEl.classList.remove('hidden');
+  } else {
+    reservedByEl.classList.add('hidden');
+  }
+
+  // Name, type, description, price, link
+  document.getElementById('detail-name').textContent = item.name;
+
+  const typeEl = document.getElementById('detail-type');
+  if (item.type) {
+    typeEl.textContent = item.type;
+    typeEl.classList.remove('hidden');
+  } else {
+    typeEl.classList.add('hidden');
+  }
+
+  const descEl = document.getElementById('detail-description');
+  if (item.description) {
+    descEl.textContent = item.description;
+    descEl.classList.remove('hidden');
+  } else {
+    descEl.classList.add('hidden');
+  }
+
+  const priceEl = document.getElementById('detail-price');
+  if (item.price !== null && item.price !== undefined) {
+    priceEl.textContent = formatPrice(item.price);
+    priceEl.classList.remove('hidden');
+  } else {
+    priceEl.classList.add('hidden');
+  }
+
+  const linkEl = document.getElementById('detail-link');
+  if (item.link) {
+    linkEl.href = item.link;
+    linkEl.textContent = 'Where to buy \u2192';
+    linkEl.classList.remove('hidden');
+  } else {
+    linkEl.classList.add('hidden');
+  }
+
+  // Reserve section
+  const section = document.getElementById('detail-reserve-section');
+  if (!item.reserved) {
+    section.innerHTML = `
+      <button class="btn btn-primary btn-full" onclick="showReservePhone('${item.id}')">Reserve this gift</button>
+      <div id="reserve-phone-form" class="phone-form hidden">
+        <div class="form-group">
+          <label for="reserve-phone">Your phone number</label>
+          <input type="tel" id="reserve-phone" placeholder="+7 (999) 123-45-67" required>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="handleReserve('${item.id}')">Confirm reservation</button>
+      </div>`;
+  } else if (isAdmin) {
+    section.innerHTML = `
+      <button class="btn btn-outline btn-full" onclick="handleAdminUnreserve('${item.id}')">Unreserve</button>`;
+  } else {
+    section.innerHTML = `
+      <button class="btn btn-outline btn-full" onclick="showUnreservePhone('${item.id}')">Cancel reservation</button>
+      <div id="unreserve-phone-form" class="phone-form hidden">
+        <div class="form-group">
+          <label for="unreserve-phone">Your phone number</label>
+          <input type="tel" id="unreserve-phone" placeholder="+7 (999) 123-45-67" required>
+        </div>
+        <div id="unreserve-error" class="form-error hidden"></div>
+        <button class="btn btn-outline btn-full" onclick="handleUnreserve('${item.id}')">Confirm cancellation</button>
+      </div>`;
+  }
+
+  openModal('detail-modal');
+}
+
+function showReservePhone() {
+  const form = document.getElementById('reserve-phone-form');
+  form.classList.remove('hidden');
+  document.getElementById('reserve-phone').focus();
+}
+
+function showUnreservePhone() {
+  const form = document.getElementById('unreserve-phone-form');
+  form.classList.remove('hidden');
+  document.getElementById('unreserve-phone').focus();
+}
+
+async function handleReserve(id) {
+  const phone = document.getElementById('reserve-phone').value.trim();
+  if (!phone) return;
+
+  const res = await fetch(`/api/items/${id}/reserve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
   if (res.ok) {
+    closeModal('detail-modal');
     await loadItems();
   } else {
     const data = await res.json();
@@ -227,9 +331,36 @@ async function reserveItem(id) {
   }
 }
 
-async function unreserveItem(id) {
-  const res = await fetch(`/api/items/${id}/unreserve`, { method: 'POST' });
-  if (res.ok) await loadItems();
+async function handleUnreserve(id) {
+  const phone = document.getElementById('unreserve-phone').value.trim();
+  if (!phone) return;
+
+  const errorEl = document.getElementById('unreserve-error');
+  const res = await fetch(`/api/items/${id}/unreserve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone })
+  });
+
+  if (res.ok) {
+    closeModal('detail-modal');
+    await loadItems();
+  } else {
+    const data = await res.json();
+    errorEl.textContent = data.error || 'Failed to cancel reservation';
+    errorEl.classList.remove('hidden');
+  }
+}
+
+async function handleAdminUnreserve(id) {
+  const res = await fetch(`/api/items/${id}/unreserve`, { method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  });
+  if (res.ok) {
+    closeModal('detail-modal');
+    await loadItems();
+  }
 }
 
 // --- Delete ---

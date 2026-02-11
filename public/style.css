@@ -127,6 +127,7 @@ main {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
+  cursor: pointer;
 }
 
 .card:hover {
@@ -136,12 +137,14 @@ main {
 }
 
 .card.reserved {
-  opacity: 0.55;
+  opacity: 0.85;
+  border-color: var(--success);
 }
 
 .card.reserved:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow);
+  border-color: var(--success);
 }
 
 .card-photo {
@@ -598,6 +601,97 @@ main {
   object-fit: cover;
   border-radius: 10px;
   border: 2px solid var(--border-light);
+}
+
+/* ===== DETAIL MODAL ===== */
+.detail-modal {
+  max-width: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.detail-modal .modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 20px;
+}
+
+.detail-photo {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  display: block;
+}
+
+.detail-body {
+  padding: 24px;
+}
+
+.detail-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.detail-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+.detail-price {
+  font-size: 28px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.detail-link {
+  display: inline-block;
+  font-size: 14px;
+  color: var(--pink);
+  text-decoration: none;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+.detail-link:hover {
+  text-decoration: underline;
+}
+
+.detail-reserved-by {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.detail-reserve-section {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}
+
+.phone-form {
+  margin-top: 14px;
+}
+
+.phone-form .form-group {
+  margin-bottom: 12px;
 }
 
 /* ===== EMPTY STATE ===== */

@@ -107,6 +107,24 @@
     </div>
   </div>
 
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="modal-overlay hidden">
+    <div class="modal detail-modal">
+      <button class="modal-close" onclick="closeModal('detail-modal')">&times;</button>
+      <img id="detail-photo" class="detail-photo" src="" alt="">
+      <div class="detail-body">
+        <span id="detail-badge" class="badge-reserved hidden">&#10003; Reserved</span>
+        <div id="detail-admin-reserved-by" class="detail-reserved-by hidden"></div>
+        <h2 id="detail-name" class="detail-name"></h2>
+        <span id="detail-type" class="card-type"></span>
+        <div id="detail-description" class="detail-description"></div>
+        <div id="detail-price" class="detail-price"></div>
+        <a id="detail-link" class="detail-link" href="" target="_blank" rel="noopener"></a>
+        <div id="detail-reserve-section" class="detail-reserve-section"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Confirm Modal -->
   <div id="confirm-modal" class="modal-overlay hidden">
     <div class="modal modal-sm">
