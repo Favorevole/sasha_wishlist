@@ -4,23 +4,37 @@ const session = require('express-session');
 const multer = require('multer');
 const bcrypt = require('bcrypt');
 const { v4: uuidv4 } = require('uuid');
-const fs = require('fs');
 const path = require('path');
+const { Pool } = require('pg');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data', 'wishlist.json');
 
-// Multer config for photo uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.join(__dirname, 'uploads')),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  }
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
+
+// Auto-create table on startup
+async function initDB() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS items (
+      id UUID PRIMARY KEY,
+      name TEXT NOT NULL,
+      link TEXT DEFAULT '',
+      price INTEGER,
+      type TEXT DEFAULT '',
+      photo TEXT DEFAULT '',
+      reserved BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `);
+}
+
+// Multer config — memory storage, convert to base64
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp|heic|heif/;
@@ -30,39 +44,22 @@ const upload = multer({
   }
 });
 
+function fileToBase64(file) {
+  if (!file) return '';
+  const base64 = file.buffer.toString('base64');
+  return `data:${file.mimetype};base64,${base64}`;
+}
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'wishlist-secret-key-change-me',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
-
-// Ensure data/uploads directories and initial data file exist
-function ensureDirectories() {
-  const dataDir = path.join(__dirname, 'data');
-  const uploadsDir = path.join(__dirname, 'uploads');
-  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ items: [] }, null, 2), 'utf-8');
-  }
-}
-ensureDirectories();
-
-// Data helpers
-function readData() {
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-  return JSON.parse(raw);
-}
-
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-}
 
 // Auth middleware
 function requireAdmin(req, res, next) {
@@ -118,96 +115,95 @@ app.get('/api/auth/check', (req, res) => {
 
 // --- ITEM ROUTES ---
 
-app.get('/api/items', (req, res) => {
-  const data = readData();
-  res.json(data.items);
+app.get('/api/items', async (req, res) => {
+  const result = await pool.query(
+    'SELECT id, name, link, price, type, photo, reserved, created_at AS "createdAt" FROM items ORDER BY created_at ASC'
+  );
+  res.json(result.rows);
 });
 
-app.post('/api/items', requireAdmin, upload.single('photo'), (req, res) => {
-  const data = readData();
-  const item = {
-    id: uuidv4(),
-    name: req.body.name || '',
-    link: req.body.link || '',
-    price: req.body.price ? Number(req.body.price) : null,
-    type: req.body.type || '',
-    photo: req.file ? `uploads/${req.file.filename}` : '',
-    reserved: false,
-    createdAt: new Date().toISOString()
-  };
-  data.items.push(item);
-  writeData(data);
-  res.status(201).json(item);
+app.post('/api/items', requireAdmin, upload.single('photo'), async (req, res) => {
+  const id = uuidv4();
+  const name = req.body.name || '';
+  const link = req.body.link || '';
+  const price = req.body.price ? Number(req.body.price) : null;
+  const type = req.body.type || '';
+  const photo = fileToBase64(req.file);
+
+  const result = await pool.query(
+    `INSERT INTO items (id, name, link, price, type, photo, reserved)
+     VALUES ($1, $2, $3, $4, $5, $6, false)
+     RETURNING id, name, link, price, type, photo, reserved, created_at AS "createdAt"`,
+    [id, name, link, price, type, photo]
+  );
+  res.status(201).json(result.rows[0]);
 });
 
-app.put('/api/items/:id', requireAdmin, upload.single('photo'), (req, res) => {
-  const data = readData();
-  const idx = data.items.findIndex(i => i.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+app.put('/api/items/:id', requireAdmin, upload.single('photo'), async (req, res) => {
+  // Check item exists
+  const existing = await pool.query('SELECT id FROM items WHERE id = $1', [req.params.id]);
+  if (existing.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-  const item = data.items[idx];
-  if (req.body.name !== undefined) item.name = req.body.name;
-  if (req.body.link !== undefined) item.link = req.body.link;
-  if (req.body.price !== undefined) item.price = req.body.price ? Number(req.body.price) : null;
-  if (req.body.type !== undefined) item.type = req.body.type;
-  if (req.file) {
-    // Delete old photo
-    if (item.photo) {
-      const oldPath = path.join(__dirname, item.photo);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
-    }
-    item.photo = `uploads/${req.file.filename}`;
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  if (req.body.name !== undefined) { fields.push(`name = $${idx++}`); values.push(req.body.name); }
+  if (req.body.link !== undefined) { fields.push(`link = $${idx++}`); values.push(req.body.link); }
+  if (req.body.price !== undefined) { fields.push(`price = $${idx++}`); values.push(req.body.price ? Number(req.body.price) : null); }
+  if (req.body.type !== undefined) { fields.push(`type = $${idx++}`); values.push(req.body.type); }
+  if (req.file) { fields.push(`photo = $${idx++}`); values.push(fileToBase64(req.file)); }
+
+  if (fields.length === 0) {
+    const current = await pool.query(
+      'SELECT id, name, link, price, type, photo, reserved, created_at AS "createdAt" FROM items WHERE id = $1',
+      [req.params.id]
+    );
+    return res.json(current.rows[0]);
   }
 
-  data.items[idx] = item;
-  writeData(data);
-  res.json(item);
+  values.push(req.params.id);
+  const result = await pool.query(
+    `UPDATE items SET ${fields.join(', ')} WHERE id = $${idx}
+     RETURNING id, name, link, price, type, photo, reserved, created_at AS "createdAt"`,
+    values
+  );
+  res.json(result.rows[0]);
 });
 
-app.delete('/api/items/:id', requireAdmin, (req, res) => {
-  const data = readData();
-  const idx = data.items.findIndex(i => i.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
-
-  const item = data.items[idx];
-  // Delete photo file
-  if (item.photo) {
-    const photoPath = path.join(__dirname, item.photo);
-    if (fs.existsSync(photoPath)) fs.unlinkSync(photoPath);
-  }
-
-  data.items.splice(idx, 1);
-  writeData(data);
+app.delete('/api/items/:id', requireAdmin, async (req, res) => {
+  const result = await pool.query('DELETE FROM items WHERE id = $1 RETURNING id', [req.params.id]);
+  if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
   res.json({ ok: true });
 });
 
-app.post('/api/items/:id/reserve', (req, res) => {
-  const data = readData();
-  const idx = data.items.findIndex(i => i.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+app.post('/api/items/:id/reserve', async (req, res) => {
+  const check = await pool.query('SELECT reserved FROM items WHERE id = $1', [req.params.id]);
+  if (check.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+  if (check.rows[0].reserved) return res.status(400).json({ error: 'Already reserved' });
 
-  if (data.items[idx].reserved) {
-    return res.status(400).json({ error: 'Already reserved' });
-  }
-
-  data.items[idx].reserved = true;
-  writeData(data);
+  await pool.query('UPDATE items SET reserved = true WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
 });
 
-app.post('/api/items/:id/unreserve', requireAdmin, (req, res) => {
-  const data = readData();
-  const idx = data.items.findIndex(i => i.id === req.params.id);
-  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+app.post('/api/items/:id/unreserve', requireAdmin, async (req, res) => {
+  const check = await pool.query('SELECT id FROM items WHERE id = $1', [req.params.id]);
+  if (check.rows.length === 0) return res.status(404).json({ error: 'Not found' });
 
-  data.items[idx].reserved = false;
-  writeData(data);
+  await pool.query('UPDATE items SET reserved = false WHERE id = $1', [req.params.id]);
   res.json({ ok: true });
 });
 
 // Start
-ensurePasswordHash().then(() => {
+async function start() {
+  await initDB();
+  await ensurePasswordHash();
   app.listen(PORT, () => {
     console.log(`Wishlist server running at http://localhost:${PORT}`);
   });
+}
+
+start().catch(err => {
+  console.error('Failed to start:', err);
+  process.exit(1);
 });

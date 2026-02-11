@@ -98,7 +98,7 @@ function renderItems() {
 
   grid.innerHTML = items.map(item => {
     const photoHTML = item.photo
-      ? `<img class="card-photo" src="/${item.photo}" alt="${escapeHtml(item.name)}">`
+      ? `<img class="card-photo" src="${item.photo}" alt="${escapeHtml(item.name)}">`
       : `<div class="card-photo-placeholder">&#127873;</div>`;
 
     const typeHTML = item.type
@@ -172,7 +172,7 @@ function openEditModal(id) {
 
   const currentPhoto = document.getElementById('current-photo');
   if (item.photo) {
-    document.getElementById('current-photo-img').src = '/' + item.photo;
+    document.getElementById('current-photo-img').src = item.photo;
     currentPhoto.classList.remove('hidden');
   } else {
     currentPhoto.classList.add('hidden');
