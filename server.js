@@ -42,6 +42,18 @@ app.use(session({
   cookie: { maxAge: 24 * 60 * 60 * 1000 }
 }));
 
+// Ensure data/uploads directories and initial data file exist
+function ensureDirectories() {
+  const dataDir = path.join(__dirname, 'data');
+  const uploadsDir = path.join(__dirname, 'uploads');
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify({ items: [] }, null, 2), 'utf-8');
+  }
+}
+ensureDirectories();
+
 // Data helpers
 function readData() {
   const raw = fs.readFileSync(DATA_FILE, 'utf-8');
