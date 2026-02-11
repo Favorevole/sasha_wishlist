@@ -3,46 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wishlist</title>
+  <title>Sasha's Wishlist</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <div class="header-inner">
-      <div class="header-logo">Sasha's Wishlist</div>
-      <div class="header-actions">
-        <button id="btn-login" class="btn btn-ghost" onclick="openLoginModal()">Login</button>
-        <button id="btn-logout" class="btn btn-ghost hidden" onclick="logout()">Logout</button>
-        <button id="btn-add" class="btn btn-primary hidden" onclick="openAddModal()">+ Add Gift</button>
-      </div>
-    </div>
-  </header>
 
   <section class="hero">
     <div class="hero-inner">
-      <div class="hero-emoji">&#127873;</div>
-      <h1>Hey! Here's what I'd love to get</h1>
-      <p class="hero-sub">Pick something, hit reserve — and it's a surprise for me!</p>
+      <img class="hero-avatar" src="avatar.jpg" alt="Sasha">
+      <h1>Sasha's Wishlist</h1>
+      <p class="hero-text">
+        21 декабря у меня день рождения! Правда, я буду кататься в Сочи&nbsp;&#9968;
+        <br>Но потом я обязательно соберу всех вместе, и вы сможете вручить свои прекрасные подарки.
+      </p>
+      <p class="hero-heart">А самый главный подарок&nbsp;&mdash; это вы&nbsp;&#10084;</p>
     </div>
   </section>
 
   <main>
+    <h2 class="section-title" id="gifts-title">What I'd love to get</h2>
     <div id="items-grid" class="items-grid">
       <!-- Cards rendered by JS -->
     </div>
     <div id="empty-state" class="empty-state hidden">
-      <div class="empty-icon">&#127880;</div>
-      <p class="empty-title">Nothing here yet</p>
-      <p class="empty-sub">Gifts will appear here soon — stay tuned!</p>
+      <div class="empty-icon">&#127873;</div>
+      <p class="empty-title">Wishlist is coming soon...</p>
+      <p class="empty-sub">I'm still thinking about what to wish for!</p>
     </div>
   </main>
 
-  <!-- Login Modal -->
+  <!-- Admin bar (only visible after login via /admin) -->
+  <div id="admin-bar" class="admin-bar hidden">
+    <div class="admin-bar-inner">
+      <span>Admin mode</span>
+      <div class="admin-bar-actions">
+        <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Gift</button>
+        <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login Modal (opened via /admin URL) -->
   <div id="login-modal" class="modal-overlay hidden">
     <div class="modal">
       <div class="modal-header">
-        <h2>Login</h2>
-        <button class="modal-close" onclick="closeModal('login-modal')">&times;</button>
+        <h2>Admin Login</h2>
+        <button class="modal-close" onclick="closeLoginAndGoHome()">&times;</button>
       </div>
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="form-group">
@@ -74,7 +80,7 @@
         </div>
         <div class="form-group">
           <label for="item-link">Link</label>
-          <input type="url" id="item-link" placeholder="https://...">
+          <input type="text" id="item-link" placeholder="https://...">
         </div>
         <div class="form-group">
           <label for="item-price">Price</label>

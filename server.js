@@ -66,6 +66,11 @@ async function ensurePasswordHash() {
   }
 }
 
+// Serve index.html for /admin route (SPA)
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 // --- AUTH ROUTES ---
 
 app.post('/api/login', async (req, res) => {

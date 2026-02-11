@@ -5,6 +5,11 @@ let items = [];
 document.addEventListener('DOMContentLoaded', async () => {
   await checkAuth();
   await loadItems();
+
+  // If URL is /admin and not logged in, show login modal
+  if (window.location.pathname === '/admin' && !isAdmin) {
+    openLoginModal();
+  }
 });
 
 // --- Auth ---
@@ -16,15 +21,20 @@ async function checkAuth() {
 }
 
 function updateUI() {
-  document.getElementById('btn-login').classList.toggle('hidden', isAdmin);
-  document.getElementById('btn-logout').classList.toggle('hidden', !isAdmin);
-  document.getElementById('btn-add').classList.toggle('hidden', !isAdmin);
+  document.getElementById('admin-bar').classList.toggle('hidden', !isAdmin);
 }
 
 function openLoginModal() {
   document.getElementById('login-form').reset();
   document.getElementById('login-error').classList.add('hidden');
   openModal('login-modal');
+}
+
+function closeLoginAndGoHome() {
+  closeModal('login-modal');
+  if (!isAdmin) {
+    history.replaceState(null, '', '/');
+  }
 }
 
 async function handleLogin(e) {
@@ -40,7 +50,7 @@ async function handleLogin(e) {
   });
 
   if (!res.ok) {
-    errorEl.textContent = 'Invalid credentials';
+    errorEl.textContent = 'Wrong username or password';
     errorEl.classList.remove('hidden');
     return;
   }
@@ -55,6 +65,7 @@ async function logout() {
   await fetch('/api/logout', { method: 'POST' });
   isAdmin = false;
   updateUI();
+  history.replaceState(null, '', '/');
   renderItems();
 }
 
@@ -68,14 +79,17 @@ async function loadItems() {
 function renderItems() {
   const grid = document.getElementById('items-grid');
   const empty = document.getElementById('empty-state');
+  const title = document.getElementById('gifts-title');
 
   if (items.length === 0) {
     grid.innerHTML = '';
     empty.classList.remove('hidden');
+    title.classList.add('hidden');
     return;
   }
 
   empty.classList.add('hidden');
+  title.classList.remove('hidden');
 
   grid.innerHTML = items.map(item => {
     const photoHTML = item.photo
@@ -91,18 +105,18 @@ function renderItems() {
       : '';
 
     const linkHTML = item.link
-      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener">View product &rarr;</a>`
+      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener">Where to buy &rarr;</a>`
       : '';
 
     const reservedBadge = item.reserved
       ? `<span class="badge-reserved">&#10003; Reserved</span>`
       : '';
 
-    let reserveBtn = '';
+    let footerBtn = '';
     if (!item.reserved) {
-      reserveBtn = `<button class="btn btn-primary btn-sm" onclick="reserveItem('${item.id}')">Reserve</button>`;
+      footerBtn = `<button class="btn btn-primary btn-sm" onclick="reserveItem('${item.id}')">Reserve this gift</button>`;
     } else if (isAdmin) {
-      reserveBtn = `<button class="btn btn-outline btn-sm" onclick="unreserveItem('${item.id}')">Unreserve</button>`;
+      footerBtn = `<button class="btn btn-outline btn-sm" onclick="unreserveItem('${item.id}')">Unreserve</button>`;
     }
 
     const adminBtns = isAdmin
@@ -122,7 +136,7 @@ function renderItems() {
           ${priceHTML}
           ${linkHTML}
           <div class="card-footer">
-            ${reserveBtn}
+            ${footerBtn}
           </div>
           ${adminBtns}
         </div>
@@ -184,6 +198,9 @@ async function handleItemSubmit(e) {
   if (res.ok) {
     closeModal('item-modal');
     await loadItems();
+  } else {
+    const err = await res.json().catch(() => ({}));
+    alert(err.error || 'Failed to save');
   }
 }
 
@@ -207,7 +224,7 @@ async function unreserveItem(id) {
 function confirmDelete(id) {
   const item = items.find(i => i.id === id);
   document.getElementById('confirm-title').textContent = 'Delete Gift';
-  document.getElementById('confirm-text').textContent = `Are you sure you want to delete "${item?.name}"?`;
+  document.getElementById('confirm-text').textContent = `Delete "${item?.name}"?`;
 
   const okBtn = document.getElementById('confirm-ok');
   okBtn.onclick = async () => {
@@ -230,21 +247,21 @@ function closeModal(id) {
   document.body.style.overflow = '';
 }
 
-// Close modal on overlay click
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.add('hidden');
     document.body.style.overflow = '';
+    if (!isAdmin) history.replaceState(null, '', '/');
   }
 });
 
-// Close modal on Escape
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => {
       m.classList.add('hidden');
     });
     document.body.style.overflow = '';
+    if (!isAdmin) history.replaceState(null, '', '/');
   }
 });
 
