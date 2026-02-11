@@ -50,11 +50,11 @@ body {
 }
 
 .hero-avatar {
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
+  width: 280px;
+  height: auto;
+  border-radius: 16px;
   object-fit: cover;
-  border: 4px solid var(--pink);
+  border: 3px solid var(--pink);
   box-shadow: 0 0 40px var(--pink-glow), 0 12px 40px rgba(0, 0, 0, 0.5);
   margin-bottom: 28px;
 }
@@ -72,6 +72,18 @@ body {
   color: var(--text-secondary);
   line-height: 1.8;
   margin-bottom: 12px;
+}
+
+.hero-date {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 10px 24px;
+  background: var(--pink-soft);
+  border: 1px solid rgba(255, 45, 120, 0.25);
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--pink);
 }
 
 .hero-heart {
@@ -613,8 +625,7 @@ main {
   }
 
   .hero-avatar {
-    width: 160px;
-    height: 160px;
+    width: 220px;
   }
 
   .hero-text {
