@@ -252,12 +252,16 @@ function closeModal(id) {
   document.body.style.overflow = '';
 }
 
-document.addEventListener('click', (e) => {
-  if (e.target.classList.contains('modal-overlay')) {
+// Close modal only if both mousedown and mouseup were on the overlay
+let mouseDownTarget = null;
+document.addEventListener('mousedown', (e) => { mouseDownTarget = e.target; });
+document.addEventListener('mouseup', (e) => {
+  if (mouseDownTarget === e.target && e.target.classList.contains('modal-overlay')) {
     e.target.classList.add('hidden');
     document.body.style.overflow = '';
     if (!isAdmin) history.replaceState(null, '', '/');
   }
+  mouseDownTarget = null;
 });
 
 document.addEventListener('keydown', (e) => {
