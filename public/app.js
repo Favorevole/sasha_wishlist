@@ -498,25 +498,12 @@ async function handleUndonate(id) {
   }
 }
 
-async function handleAdminRemoveDonation(itemId, donationId) {
-  const res = await fetch(`/api/items/${itemId}/undonate`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ donationId })
-  });
-  if (res.ok) {
-    await loadItems();
-    // Refresh donor list in modal
-    loadDonors(itemId);
-    // Update progress bar in modal
-    const item = items.find(i => i.id === itemId);
-    if (item) openDetailModal(itemId);
-  }
-}
-
 async function loadDonors(itemId) {
   const container = document.getElementById('detail-donors-container');
   if (!container) return;
+
+  // Admin (birthday person) should not see donors
+  if (isAdmin) { container.innerHTML = ''; return; }
 
   const res = await fetch(`/api/items/${itemId}/donations`);
   const donors = await res.json();
@@ -528,20 +515,12 @@ async function loadDonors(itemId) {
 
   const donorRows = donors.map(d => {
     const nameDisplay = d.name || 'Anonymous';
-    const phoneDisplay = isAdmin && d.phone ? `<span class="donor-phone">${escapeHtml(d.phone)}</span>` : '';
-    const removeBtn = isAdmin && d.id
-      ? `<button class="btn btn-danger btn-sm" onclick="handleAdminRemoveDonation('${itemId}', '${d.id}')">Remove</button>`
-      : '';
     return `
       <div class="donor-item">
         <div class="donor-info">
           <span class="donor-name">${escapeHtml(nameDisplay)}</span>
-          ${phoneDisplay}
         </div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span class="donor-amount">${formatPrice(d.amount)}</span>
-          ${removeBtn}
-        </div>
+        <span class="donor-amount">${formatPrice(d.amount)}</span>
       </div>`;
   }).join('');
 

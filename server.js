@@ -140,9 +140,7 @@ app.get('/api/items', async (req, res) => {
   const cols = isAdminReq
     ? 'i.id, i.name, i.link, i.price, i.type, i.photo, i.description, i.reserved, i.reserved_by AS "reservedBy", i.created_at AS "createdAt"'
     : 'i.id, i.name, i.link, i.price, i.type, i.photo, i.description, i.reserved, i.created_at AS "createdAt"';
-  const donorAgg = isAdminReq
-    ? ', COALESCE(SUM(d.amount), 0)::int AS funded, COUNT(d.id)::int AS "donorCount"'
-    : ', COALESCE(SUM(d.amount), 0)::int AS funded';
+  const donorAgg = ', COALESCE(SUM(d.amount), 0)::int AS funded';
   const result = await pool.query(
     `SELECT ${cols}${donorAgg}
      FROM items i
@@ -261,15 +259,7 @@ app.post('/api/items/:id/donate', async (req, res) => {
 });
 
 app.post('/api/items/:id/undonate', async (req, res) => {
-  const isAdminReq = req.session && req.session.isAdmin;
-  const { phone, donationId } = req.body;
-
-  if (isAdminReq && donationId) {
-    const result = await pool.query('DELETE FROM donations WHERE id = $1 AND item_id = $2 RETURNING id', [donationId, req.params.id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Donation not found' });
-    return res.json({ ok: true });
-  }
-
+  const { phone } = req.body;
   if (!phone || !phone.trim()) return res.status(400).json({ error: 'Phone number is required' });
   const normalized = phone.trim().replace(/[\s\-\(\)]/g, '');
   const result = await pool.query('DELETE FROM donations WHERE item_id = $1 AND phone = $2 RETURNING id', [req.params.id, normalized]);
@@ -278,12 +268,8 @@ app.post('/api/items/:id/undonate', async (req, res) => {
 });
 
 app.get('/api/items/:id/donations', async (req, res) => {
-  const isAdminReq = req.session && req.session.isAdmin;
-  const cols = isAdminReq
-    ? 'id, name, phone, amount, created_at AS "createdAt"'
-    : 'name, amount';
   const result = await pool.query(
-    `SELECT ${cols} FROM donations WHERE item_id = $1 ORDER BY created_at ASC`,
+    'SELECT name, amount FROM donations WHERE item_id = $1 ORDER BY created_at ASC',
     [req.params.id]
   );
   res.json(result.rows);
