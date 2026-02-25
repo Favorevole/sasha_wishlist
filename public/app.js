@@ -51,7 +51,7 @@ async function handleLogin(e) {
     });
 
     if (!res.ok) {
-      errorEl.textContent = 'Wrong username or password';
+      errorEl.textContent = 'Неверное имя пользователя или пароль';
       errorEl.classList.remove('hidden');
       return;
     }
@@ -61,7 +61,7 @@ async function handleLogin(e) {
     closeModal('login-modal');
     renderItems();
   } catch (err) {
-    errorEl.textContent = 'Connection error';
+    errorEl.textContent = 'Ошибка соединения';
     errorEl.classList.remove('hidden');
   }
 }
@@ -117,7 +117,7 @@ function renderItems() {
     if (item.price && item.funded > 0) {
       const pct = Math.min(item.funded / item.price * 100, 100);
       if (item.funded >= item.price) {
-        progressHTML = `<span class="badge-funded">&#10003; Fully funded</span>`;
+        progressHTML = `<span class="badge-funded">&#10003; Полностью профинансировано</span>`;
       } else {
         progressHTML = `
           <div class="card-progress"><div class="card-progress-bar" style="width:${pct}%"></div></div>
@@ -126,17 +126,17 @@ function renderItems() {
     }
 
     const linkHTML = item.link
-      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Where to buy &rarr;</a>`
+      ? `<a class="card-link" href="${escapeHtml(item.link)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Где купить &rarr;</a>`
       : '';
 
     const reservedBadge = item.reserved
-      ? `<span class="badge-reserved">&#10003; Reserved</span>`
+      ? `<span class="badge-reserved">&#10003; Зарезервировано</span>`
       : '';
 
     const adminBtns = isAdmin
       ? `<div class="card-admin-actions">
-           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openEditModal('${item.id}')">Edit</button>
-           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDelete('${item.id}')">Delete</button>
+           <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openEditModal('${item.id}')">Редактировать</button>
+           <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); confirmDelete('${item.id}')">Удалить</button>
          </div>`
       : '';
 
@@ -159,7 +159,7 @@ function renderItems() {
 
 // --- Add / Edit ---
 function openAddModal() {
-  document.getElementById('item-modal-title').textContent = 'Add Gift';
+  document.getElementById('item-modal-title').textContent = 'Добавить подарок';
   document.getElementById('item-form').reset();
   document.getElementById('item-id').value = '';
   document.getElementById('current-photo').classList.add('hidden');
@@ -170,7 +170,7 @@ function openEditModal(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
 
-  document.getElementById('item-modal-title').textContent = 'Edit Gift';
+  document.getElementById('item-modal-title').textContent = 'Редактировать подарок';
   document.getElementById('item-id').value = item.id;
   document.getElementById('item-name').value = item.name;
   document.getElementById('item-link').value = item.link || '';
@@ -215,7 +215,7 @@ async function handleItemSubmit(e) {
     await loadItems();
   } else {
     const err = await res.json().catch(() => ({}));
-    alert(err.error || 'Failed to save');
+    alert(err.error || 'Не удалось сохранить');
   }
 }
 
@@ -240,7 +240,7 @@ function openDetailModal(id) {
   // Admin: show who reserved
   const reservedByEl = document.getElementById('detail-admin-reserved-by');
   if (isAdmin && item.reserved && item.reservedBy) {
-    reservedByEl.textContent = `Reserved by: ${item.reservedBy}`;
+    reservedByEl.textContent = `Зарезервировано: ${item.reservedBy}`;
     reservedByEl.classList.remove('hidden');
   } else {
     reservedByEl.classList.add('hidden');
@@ -276,7 +276,7 @@ function openDetailModal(id) {
   const linkEl = document.getElementById('detail-link');
   if (item.link) {
     linkEl.href = item.link;
-    linkEl.textContent = 'Where to buy \u2192';
+    linkEl.textContent = 'Где купить \u2192';
     linkEl.classList.remove('hidden');
   } else {
     linkEl.classList.add('hidden');
@@ -290,7 +290,7 @@ function openDetailModal(id) {
   if (hasPrice && item.funded > 0) {
     const pct = Math.min(item.funded / item.price * 100, 100);
     if (item.funded >= item.price) {
-      detailProgressHTML = `<span class="badge-funded">&#10003; Fully funded</span>`;
+      detailProgressHTML = `<span class="badge-funded">&#10003; Полностью профинансировано</span>`;
     } else {
       detailProgressHTML = `
         <div class="detail-progress"><div class="detail-progress-bar" style="width:${pct}%"></div></div>
@@ -300,49 +300,49 @@ function openDetailModal(id) {
 
   if (!item.reserved) {
     const donateBtn = hasPrice
-      ? `<button class="btn btn-outline btn-full" onclick="showDonateForm('${item.id}')" style="margin-top:8px">Contribute</button>`
+      ? `<button class="btn btn-outline btn-full" onclick="showDonateForm('${item.id}')" style="margin-top:8px">Внести вклад</button>`
       : '';
 
     const donateForm = hasPrice
       ? `<div id="donate-form" class="donate-form hidden">
           <div class="form-group">
-            <label for="donate-phone">Your phone number</label>
+            <label for="donate-phone">Ваш номер телефона</label>
             <input type="tel" id="donate-phone" placeholder="+7 (999) 123-45-67" required>
           </div>
           <div class="form-group">
-            <label for="donate-name">Your name (optional)</label>
-            <input type="text" id="donate-name" placeholder="Your name">
+            <label for="donate-name">Ваше имя (необязательно)</label>
+            <input type="text" id="donate-name" placeholder="Ваше имя">
           </div>
           <div class="form-group">
-            <label for="donate-amount">Amount (&#8381;)</label>
+            <label for="donate-amount">Сумма (&#8381;)</label>
             <input type="number" id="donate-amount" min="1" step="1" required>
           </div>
           <div id="donate-error" class="form-error hidden"></div>
-          <button class="btn btn-primary btn-full" onclick="handleDonate('${item.id}')">Confirm contribution</button>
+          <button class="btn btn-primary btn-full" onclick="handleDonate('${item.id}')">Подтвердить вклад</button>
         </div>`
       : '';
 
     const cancelDonateBtn = hasPrice && item.funded > 0
-      ? `<button class="btn btn-outline btn-full" onclick="showUndonateForm('${item.id}')" style="margin-top:8px">Cancel my contribution</button>
+      ? `<button class="btn btn-outline btn-full" onclick="showUndonateForm('${item.id}')" style="margin-top:8px">Отменить мой вклад</button>
          <div id="undonate-form" class="phone-form hidden">
            <div class="form-group">
-             <label for="undonate-phone">Your phone number</label>
+             <label for="undonate-phone">Ваш номер телефона</label>
              <input type="tel" id="undonate-phone" placeholder="+7 (999) 123-45-67" required>
            </div>
            <div id="undonate-error" class="form-error hidden"></div>
-           <button class="btn btn-outline btn-full" onclick="handleUndonate('${item.id}')">Confirm cancellation</button>
+           <button class="btn btn-outline btn-full" onclick="handleUndonate('${item.id}')">Подтвердить отмену</button>
          </div>`
       : '';
 
     section.innerHTML = `
       ${detailProgressHTML}
-      <button class="btn btn-primary btn-full" onclick="showReservePhone('${item.id}')">Reserve this gift</button>
+      <button class="btn btn-primary btn-full" onclick="showReservePhone('${item.id}')">Зарезервировать подарок</button>
       <div id="reserve-phone-form" class="phone-form hidden">
         <div class="form-group">
-          <label for="reserve-phone">Your phone number</label>
+          <label for="reserve-phone">Ваш номер телефона</label>
           <input type="tel" id="reserve-phone" placeholder="+7 (999) 123-45-67" required>
         </div>
-        <button class="btn btn-primary btn-full" onclick="handleReserve('${item.id}')">Confirm reservation</button>
+        <button class="btn btn-primary btn-full" onclick="handleReserve('${item.id}')">Подтвердить резервацию</button>
       </div>
       ${donateBtn}
       ${donateForm}
@@ -351,19 +351,19 @@ function openDetailModal(id) {
   } else if (isAdmin) {
     section.innerHTML = `
       ${detailProgressHTML}
-      <button class="btn btn-outline btn-full" onclick="handleAdminUnreserve('${item.id}')">Unreserve</button>
+      <button class="btn btn-outline btn-full" onclick="handleAdminUnreserve('${item.id}')">Снять резервацию</button>
       <div id="detail-donors-container"></div>`;
   } else {
     section.innerHTML = `
       ${detailProgressHTML}
-      <button class="btn btn-outline btn-full" onclick="showUnreservePhone('${item.id}')">Cancel reservation</button>
+      <button class="btn btn-outline btn-full" onclick="showUnreservePhone('${item.id}')">Отменить резервацию</button>
       <div id="unreserve-phone-form" class="phone-form hidden">
         <div class="form-group">
-          <label for="unreserve-phone">Your phone number</label>
+          <label for="unreserve-phone">Ваш номер телефона</label>
           <input type="tel" id="unreserve-phone" placeholder="+7 (999) 123-45-67" required>
         </div>
         <div id="unreserve-error" class="form-error hidden"></div>
-        <button class="btn btn-outline btn-full" onclick="handleUnreserve('${item.id}')">Confirm cancellation</button>
+        <button class="btn btn-outline btn-full" onclick="handleUnreserve('${item.id}')">Подтвердить отмену</button>
       </div>
       <div id="detail-donors-container"></div>`;
   }
@@ -403,7 +403,7 @@ async function handleReserve(id) {
     await loadItems();
   } else {
     const data = await res.json();
-    alert(data.error || 'Failed to reserve');
+    alert(data.error || 'Не удалось зарезервировать');
   }
 }
 
@@ -423,7 +423,7 @@ async function handleUnreserve(id) {
     await loadItems();
   } else {
     const data = await res.json();
-    errorEl.textContent = data.error || 'Failed to cancel reservation';
+    errorEl.textContent = data.error || 'Не удалось отменить резервацию';
     errorEl.classList.remove('hidden');
   }
 }
@@ -458,8 +458,8 @@ async function handleDonate(id) {
   const amount = parseInt(document.getElementById('donate-amount').value, 10);
   const errorEl = document.getElementById('donate-error');
 
-  if (!phone) { errorEl.textContent = 'Phone number is required'; errorEl.classList.remove('hidden'); return; }
-  if (!amount || amount <= 0) { errorEl.textContent = 'Amount must be greater than 0'; errorEl.classList.remove('hidden'); return; }
+  if (!phone) { errorEl.textContent = 'Требуется номер телефона'; errorEl.classList.remove('hidden'); return; }
+  if (!amount || amount <= 0) { errorEl.textContent = 'Сумма должна быть больше 0'; errorEl.classList.remove('hidden'); return; }
 
   const res = await fetch(`/api/items/${id}/donate`, {
     method: 'POST',
@@ -472,7 +472,7 @@ async function handleDonate(id) {
     await loadItems();
   } else {
     const data = await res.json();
-    errorEl.textContent = data.error || 'Failed to contribute';
+    errorEl.textContent = data.error || 'Не удалось внести вклад';
     errorEl.classList.remove('hidden');
   }
 }
@@ -493,7 +493,7 @@ async function handleUndonate(id) {
     await loadItems();
   } else {
     const data = await res.json();
-    errorEl.textContent = data.error || 'No donations found for this phone';
+    errorEl.textContent = data.error || 'Вклады для этого телефона не найдены';
     errorEl.classList.remove('hidden');
   }
 }
@@ -514,7 +514,7 @@ async function loadDonors(itemId) {
   }
 
   const donorRows = donors.map(d => {
-    const nameDisplay = d.name || 'Anonymous';
+    const nameDisplay = d.name || 'Аноним';
     return `
       <div class="donor-item">
         <div class="donor-info">
@@ -526,7 +526,7 @@ async function loadDonors(itemId) {
 
   container.innerHTML = `
     <div class="detail-donors">
-      <div class="detail-donors-title">Contributors</div>
+      <div class="detail-donors-title">Вкладчики</div>
       ${donorRows}
     </div>`;
 }
@@ -534,8 +534,8 @@ async function loadDonors(itemId) {
 // --- Delete ---
 function confirmDelete(id) {
   const item = items.find(i => i.id === id);
-  document.getElementById('confirm-title').textContent = 'Delete Gift';
-  document.getElementById('confirm-text').textContent = `Delete "${item?.name}"?`;
+  document.getElementById('confirm-title').textContent = 'Удалить подарок';
+  document.getElementById('confirm-text').textContent = `Удалить "${item?.name}"?`;
 
   const okBtn = document.getElementById('confirm-ok');
   okBtn.onclick = async () => {
