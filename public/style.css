@@ -142,14 +142,15 @@ body {
 
 .hero-date {
   display: inline-block;
-  margin-top: 12px;
-  padding: 10px 24px;
+  margin-top: 16px;
+  padding: 16px 32px;
   background: var(--pink-soft);
   border: 1px solid rgba(255, 45, 120, 0.25);
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 12px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--pink);
+  line-height: 1.5;
 }
 
 .hero-heart {
