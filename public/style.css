@@ -180,10 +180,10 @@ main {
   max-width: 600px;
   margin: 0 auto 32px;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
-  color: var(--text-secondary);
-  opacity: 0.9;
+  color: var(--text-primary);
+  font-weight: 500;
 }
 
 /* ===== GRID ===== */
