@@ -140,6 +140,27 @@ function renderItems() {
          </div>`
       : '';
 
+    // User action buttons (not for admin)
+    let userActionBtns = '';
+    if (!isAdmin) {
+      if (!item.reserved) {
+        const hasPrice = item.price !== null && item.price !== undefined && item.price > 0;
+        const contributeBtn = hasPrice && item.funded < item.price
+          ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); openDetailModal('${item.id}')">Внести вклад</button>`
+          : '';
+        userActionBtns = `
+          <div class="card-user-actions">
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); quickReserve('${item.id}')">Зарезервировать</button>
+            ${contributeBtn}
+          </div>`;
+      } else {
+        userActionBtns = `
+          <div class="card-user-actions">
+            <button class="btn btn-outline btn-sm" onclick="event.stopPropagation(); quickUnreserve('${item.id}')">Отменить резервацию</button>
+          </div>`;
+      }
+    }
+
     return `
       <div class="card ${item.reserved ? 'reserved' : ''}" onclick="openDetailModal('${item.id}')">
         ${photoHTML}
@@ -151,6 +172,7 @@ function renderItems() {
           ${priceHTML}
           ${progressHTML}
           ${linkHTML}
+          ${userActionBtns}
           ${adminBtns}
         </div>
       </div>`;
@@ -437,6 +459,17 @@ async function handleAdminUnreserve(id) {
     closeModal('detail-modal');
     await loadItems();
   }
+}
+
+// Quick actions from card
+function quickReserve(id) {
+  openDetailModal(id);
+  setTimeout(() => showReservePhone(), 100);
+}
+
+function quickUnreserve(id) {
+  openDetailModal(id);
+  setTimeout(() => showUnreservePhone(), 100);
 }
 
 // --- Donations ---
