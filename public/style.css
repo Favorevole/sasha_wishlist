@@ -135,7 +135,7 @@ body {
 
 .hero-text {
   font-size: 17px;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   line-height: 1.8;
   margin-bottom: 12px;
 }
