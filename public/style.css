@@ -236,10 +236,23 @@ main {
 
 .tshirt-info {
   max-width: 650px;
-  margin: 0 auto 40px;
+  margin: 0 auto 20px;
   padding: 20px 24px;
   background: linear-gradient(135deg, rgba(255, 45, 120, 0.08), rgba(138, 43, 226, 0.08));
   border: 1px solid rgba(255, 45, 120, 0.2);
+  border-radius: 12px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.contribute-info {
+  max-width: 650px;
+  margin: 0 auto 40px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(33, 150, 243, 0.08));
+  border: 1px solid rgba(76, 175, 80, 0.25);
   border-radius: 12px;
   text-align: center;
   font-size: 15px;
